@@ -102,6 +102,11 @@ export const Agent: React.FC<{
               console.log('[SYSTEM]: No response received within timeout, retrying...');
               // Trigger the LLM to continue the conversation
 
+              // IN THEORY, THIS IS WHERE WE WOULD TRIGGER THE AGENT'S LLM
+              // TO GENERATE THE NEXT MESSAGE
+
+              // FOR NOW, I HAVE JUST PRINTED OUT THE ACTIONS AVAILABLE BELOW
+
               const actions = voiceClient.describeActions();
               console.log(actions);
 
