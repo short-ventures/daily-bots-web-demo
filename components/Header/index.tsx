@@ -13,7 +13,10 @@ export function Header() {
     >
       <div className="group flex gap-8">
         <span className="border border-primary-200 rounded-xl p-2 flex place-content-center transition-all bg-white shadow-short hover:shadow-mid">
-          <Logo className="w-[42px] h-auto aspect-square" />
+          {/* <Logo className="w-[42px] h-auto aspect-square" /> */}
+          <h1 className="text-5xl md:text-5xl font-bold tracking-tight text-gray-900">
+            <span className="inline-block">👩‍🚀</span>
+          </h1>
         </span>
         <nav className="pointer-events-none flex-row items-center gap-8 text-lg leading-7 hidden group-hover:flex group-hover:pointer-events-auto">
           <a href="https://bots.daily.co" target="_blank" className={aCx}>

@@ -1,4 +1,4 @@
-import { Book, Info } from "lucide-react";
+import { Book, Info, Bot, Sparkles, MessageSquareText } from "lucide-react";
 import React from "react";
 
 import { Button } from "./ui/button";
@@ -9,47 +9,65 @@ type SplashProps = {
 
 export const Splash: React.FC<SplashProps> = ({ handleReady }) => {
   return (
-    <main className="w-full flex items-center justify-center bg-primary-200 p-4 bg-[length:auto_50%] lg:bg-auto bg-colorWash bg-no-repeat bg-right-top">
-      <div className="flex flex-col gap-8 lg:gap-12 items-center max-w-full lg:max-w-3xl">
-        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-balance text-left">
-          Daily Bots demo
-        </h1>
+    <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-200 p-6">
+      <div className="relative w-full max-w-5xl mx-auto">
+        {/* Background decorative elements */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-primary-200 rounded-full filter blur-3xl opacity-20 -z-10" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-300 rounded-full filter blur-3xl opacity-20 -z-10" />
 
-        <p className="text-primary-500 text-lg font-semibold leading-relaxed">
-          Anthropic Claude 3.5 Sonnet <br />
-          Llama 3.1 8B, Llama 3.1 70B, Llama 3.1 405B <br />
-          Open AI GPT-4o, GPT-4o mini
-          <br />
-          Grok AI Beta
-          <br />
-          Gemini 1.5 Flash, 1.0 Pro
-        </p>
+        <div className="flex flex-col items-center gap-12 bg-white/30 rounded-2xl p-8">
+          {/* Hero Section */}
+          <div className="text-center space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 text-primary-700 font-medium text-sm mb-4">
+              <Sparkles className="size-4" />
+              AI-Powered Demo Platform
+            </div>
 
-        <Button onClick={() => handleReady()}>Try Demo</Button>
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-gray-900">
+              Realtime-AI Product Demo <span className="inline-block">👩‍🚀</span>
+            </h1>
 
-        <div className="h-[1px] bg-primary-300 w-full" />
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Experience interactive product demonstrations powered by advanced
+              AI assistants. Get real-time, intelligent responses to your
+              product queries.
+            </p>
+          </div>
 
-        <footer className="flex flex-col lg:gap-2">
-          <Button variant="light" asChild>
-            <a
-              href="https://www.daily.co/products/daily-bots/"
-              className="text-indigo-600"
-            >
-              <Info className="size-6" />
-              Learn more about Daily Bots
-            </a>
+          {/* Features Grid */}
+          <div className="grid md:grid-cols-3 gap-6 w-full max-w-3xl">
+            <div className="flex flex-col items-center p-4 rounded-lg bg-white/50 backdrop-blur-sm">
+              <Bot className="size-8 text-primary-600 mb-2" />
+              <h3 className="font-semibold">AI-Powered</h3>
+              <p className="text-sm text-gray-600 text-center">
+                Advanced AI models for intelligent interactions
+              </p>
+            </div>
+            <div className="flex flex-col items-center p-4 rounded-lg bg-white/50 backdrop-blur-sm">
+              <MessageSquareText className="size-8 text-primary-600 mb-2" />
+              <h3 className="font-semibold">Real-time Responses</h3>
+              <p className="text-sm text-gray-600 text-center">
+                Instant, contextual product information
+              </p>
+            </div>
+            <div className="flex flex-col items-center p-4 rounded-lg bg-white/50 backdrop-blur-sm">
+              <Sparkles className="size-8 text-primary-600 mb-2" />
+              <h3 className="font-semibold">Interactive Demo</h3>
+              <p className="text-sm text-gray-600 text-center">
+                Engaging product demonstrations
+              </p>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <Button
+            onClick={() => handleReady()}
+            size="lg"
+            className="text-lg px-8 py-6 rounded-full bg-primary-600 hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl"
+          >
+            Start Product Demo 🚀
           </Button>
-
-          <Button variant="light" asChild>
-            <a
-              href="https://github.com/daily-demos/daily-bots-web-demo"
-              className="text-indigo-600"
-            >
-              <Book className="size-6" />
-              Demo source code
-            </a>
-          </Button>
-        </footer>
+        </div>
       </div>
     </main>
   );

@@ -64,41 +64,53 @@ export const defaultServices = {
 
 export const defaultLLMPrompt = `You are demoing a product called Reword, an AI-assisted, collaborative writing assistant for SEO and marketers.
 
-  You are giving the demo to Cal, a potential customer who works for Short Ventures, a marketing studio.
+You are giving the demo to Cal, a potential customer who works for Short Ventures, a marketing studio.
 
-  Your demo follows a fixed path, going through each flow below, one screen at a time.
+Your demo follows a fixed path, going through each flow below, one screen at a time.
 
-  Here is an XML structure detailing the flows and screens:
+Here is an XML structure detailing the flows and screens:
 
-  <flow name="Creating a new draft">
-    <screen id="1">
-      The page displays the \"All Drafts\" section, showing a list of drafts with details such as title, search score, word count, comments, assignment, and last edited information. There's a button to \"Write a new draft\" at the top right.
-    </screen>
-    <screen id="2">
-      The screen shows two options for creating a new draft: \r\n\r\n1. \"Start from scratch\" with a button to \"Start writing.\"\r\n2. \"Import existing article\" with a field to enter a URL and an \"Import\" button. \r\n\r\nChoose one to proceed with creating your draft.
-    </screen>
-    <screen id="3">
-      You're on the \"Create a new draft\" page, specifically Step 02, which asks, \"What is your article’s objective?\" You should enter a clear and descriptive objective in the text box provided. Once done, you can proceed by clicking the \"Continue to search intents\" button.
-    </screen>
-    <screen id="4">
-      You are on the \"Create a new draft\" page, specifically Step 3: \"What search intents matter to you?\" \r\n\r\n- It allows you to add up to 5 search intents for your article.\r\n- Current search intents listed are:\r\n  1. How to clean a car interior\r\n  2. Best car cleaning products\r\n  3. Step-by-step car washing guide\r\n- Option to add a new search intent is available.\r\n- You can proceed by clicking \"Continue to research.\
-    </screen>
-    <screen id="5">
-      The current screen is focused on selecting how your AI Cowriter should learn. You can choose between \"Live Research,\" where the Cowriter scans the web automatically, or \"Manual Research,\" where you hand-pick URLs and PDFs. Options to go back, discard, or start writing your draft are available.
-    </screen>
-    <screen id="6">
-      This screen shows a text editor with an error message indicating placeholder text or an error in the request. The toolbar above offers text formatting options. On the right, there is a \"Research\" panel with a search function and several prompts/questions related to writing and research.
-    </screen>
-  </flow>
+<flow name="Creating a new draft">
+  <screen id="1">
+    The page displays the \"All Drafts\" section, showing a list of drafts with details such as title, search score, word count, comments, assignment, and last edited information. There's a button to \"Write a new draft\" at the top right.
+  </screen>
 
-  You should start with the following script:
+  <screen id="2">
+    The screen shows two options for creating a new draft: \r\n\r\n1. \"Start from scratch\" with a button to \"Start writing.\"\r\n2. \"Import existing article\" with a field to enter a URL and an \"Import\" button. \r\n\r\nChoose one to proceed with creating your draft.
+  </screen>
 
-  "Hey Cal, how are you?"
+  <screen id="3">
+    You're on the \"Create a new draft\" page, specifically Step 02, which asks, \"What is your article's objective?\" You should enter a clear and descriptive objective in the text box provided. Once done, you can proceed by clicking the \"Continue to search intents\" button.
+  </screen>
 
-  Then, you should ask whether there is a particular part of the platform they want to learn about, or if they just want a general overview.
+  <screen id="4">
+    You are on the \"Create a new draft\" page, specifically Step 3: \"What search intents matter to you?\" \r\n\r\n- It allows you to add up to 5 search intents for your article.\r\n- Current search intents listed are:\r\n  1. How to clean a car interior\r\n  2. Best car cleaning products\r\n  3. Step-by-step car washing guide\r\n- Option to add a new search intent is available.\r\n- You can proceed by clicking \"Continue to research.\
+  </screen>
 
-  Subsequent messages should follow the flow/screens order, with just one screen being detailed at a time, to give the user a change to respond.
-  `;
+  <screen id="5">
+    The current screen is focused on selecting how your AI Cowriter should learn. You can choose between \"Live Research,\" where the Cowriter scans the web automatically, or \"Manual Research,\" where you hand-pick URLs and PDFs. Options to go back, discard, or start writing your draft are available.
+  </screen>
+  
+  <screen id="6">
+    This screen shows a text editor with an error message indicating placeholder text or an error in the request. The toolbar above offers text formatting options. On the right, there is a \"Research\" panel with a search function and several prompts/questions related to writing and research.
+  </screen>
+</flow>
+
+Reminder:
+- Use the 'log_current_screen_number' function to log the current screen number before describing the new screen.
+- Give function objects as one line without any spaces
+- Required parameters MUST be specified
+- Only call one function at a time
+- Put the entire function call reply on one line
+- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls
+
+You should start with the following script:
+
+"Hey Cal, how are you?"
+
+Then, you should ask whether there is a particular part of the platform they want to learn about, or if they just want a general overview.
+
+Subsequent messages should follow the flow/screens order, with just one screen being detailed at a time, to give the user a change to respond.`;
 
 export const defaultConfig = [
   { service: "vad", options: [{ name: "params", value: { stop_secs: 0.5 } }] },
@@ -128,11 +140,39 @@ export const defaultConfig = [
             role: "system",
             content: defaultLLMPrompt,
           },
+
+          // {
+          //   // anthropic: user; openai: system
+
+          //   role: "system",
+          //   content:
+          //     "You are a TV weatherman named Wally. Your job is to present the weather to me. You can call the 'get_current_weather' function to get weather information. Start by asking me for my location. Then, use 'get_current_weather' to give me a forecast. Then, answer any questions I have about the weather. Keep your introduction and responses very brief. You don't need to tell me if you're going to call a function; just do it directly. Keep your words to a minimum. When you're delivering the forecast, you can use more words and personality.",
+          // },
         ],
       },
       { name: "run_on_config", value: true },
+      {
+        name: "tools",
+        value: [
+          {
+            name: "log_current_screen_number",
+            description: "Log the current screen_number being discussed",
+            parameters: {
+              type: "object",
+              properties: {
+                screen_number: {
+                  type: "number",
+                  description: "The current screen number (1-6).",
+                },
+              },
+              required: ["screen_number"],
+            },
+          },
+        ],
+      },
     ],
   },
+
   {
     service: "stt",
     options: [

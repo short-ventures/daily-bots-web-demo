@@ -1,8 +1,21 @@
 import React, { memo, useCallback, useEffect, useState, useRef } from "react";
 import clsx from "clsx";
 import { Loader2 } from "lucide-react";
-import { RTVIEvent, RTVIClient, RTVIMessage } from "realtime-ai";
-import { useRTVIClient, useRTVIClientEvent, VoiceVisualizer } from "realtime-ai-react";
+import {
+  RTVIEvent,
+  RTVIClient,
+  RTVIMessage,
+  LLMHelper,
+  TranscriptData,
+  BotLLMTextData,
+  TransportState,
+  Participant,
+} from "realtime-ai";
+import {
+  useRTVIClient,
+  useRTVIClientEvent,
+  VoiceVisualizer,
+} from "realtime-ai-react";
 
 import ModelBadge from "./model";
 
@@ -13,18 +26,20 @@ export const Agent: React.FC<{
   statsAggregator: StatsAggregator;
 }> = memo(
   ({ isReady, statsAggregator }) => {
-    const [messages, setMessages] = useState<{role: string; content: string}[]>([]);
-    
+    const [messages, setMessages] = useState<
+      { role: string; content: string }[]
+    >([]);
+
     // Print conversation history
-    const printHistory = useCallback(() => {
-      if (messages.length > 0) {
-        console.log('\n=== Conversation History ===');
-        messages.forEach(msg => {
-          console.log(`[${msg.role.toUpperCase()}]: ${msg.content}`);
-        });
-        console.log('=========================\n');
-      }
-    }, [messages]);
+    // const printHistory = useCallback(() => {
+    //   if (messages.length > 0) {
+    //     console.log("\n=== Conversation History ===");
+    //     messages.forEach((msg) => {
+    //       console.log(`[${msg.role.toUpperCase()}]: ${msg.content}`);
+    //     });
+    //     console.log("=========================\n");
+    //   }
+    // }, [messages]);
     const voiceClient = useRTVIClient()!;
     const [hasStarted, setHasStarted] = useState<boolean>(false);
     const [botStatus, setBotStatus] = useState<
@@ -42,39 +57,88 @@ export const Agent: React.FC<{
       setBotStatus("connected");
     }, [isReady]);
 
-    // Log LLM messages
+    // Log transport state changes
     useRTVIClientEvent(
-      RTVIEvent.LLMMessage,
-      useCallback((message: RTVIMessage) => {
-        const llmMessage = message.data as { role: string; content: string };
-        setMessages(prev => [...prev, llmMessage]);
-        console.log(`[${llmMessage.role.toUpperCase()}]: ${llmMessage.content}`);
+      RTVIEvent.TransportStateChanged,
+      useCallback((state: TransportState) => {
+        console.log(`Transport state changed: ${state}`);
       }, [])
     );
 
-    // Log user messages
+    // Log bot connection events
     useRTVIClientEvent(
-      RTVIEvent.UserMessage,
-      useCallback((message: RTVIMessage) => {
-        const userMessage = message.data as { content: string };
-        setMessages(prev => [...prev, { role: 'user', content: userMessage.content }]);
-        console.log(`[USER]: ${userMessage.content}`);
+      RTVIEvent.BotConnected,
+      useCallback((participant?: Participant) => {
+        console.log(`Bot connected: ${JSON.stringify(participant)}`);
       }, [])
     );
 
     useRTVIClientEvent(
       RTVIEvent.BotDisconnected,
-      useCallback(() => {
-        setHasStarted(false);
-        setBotStatus("disconnected");
-        printHistory(); // Print history when bot disconnects
-      }, [printHistory])
+      useCallback((participant?: Participant) => {
+        console.log(`Bot disconnected: ${JSON.stringify(participant)}`);
+      }, [])
     );
+
+    // Log track events
+    useRTVIClientEvent(
+      RTVIEvent.TrackStarted,
+      useCallback((track: MediaStreamTrack, participant?: Participant) => {
+        console.log(
+          `Track started: ${track.kind} from ${participant?.name || "unknown"}`
+        );
+      }, [])
+    );
+
+    useRTVIClientEvent(
+      RTVIEvent.TrackStopped,
+      useCallback((track: MediaStreamTrack, participant?: Participant) => {
+        console.log(
+          `Track stopped: ${track.kind} from ${participant?.name || "unknown"}`
+        );
+      }, [])
+    );
+
+    useRTVIClientEvent(
+      RTVIEvent.UserTranscript,
+      useCallback((data: TranscriptData) => {
+        // Only log final transcripts
+        if (data.final) {
+          console.log(`User: ${data.text}`);
+        }
+      }, [])
+    );
+
+    useRTVIClientEvent(
+      RTVIEvent.BotTranscript,
+      useCallback((data: BotLLMTextData) => {
+        console.log(`Bot: ${data.text}`);
+      }, [])
+    );
+
+    useRTVIClientEvent(
+      RTVIEvent.UserStartedSpeaking,
+      useCallback(() => {
+        if (responseTimeoutRef.current) {
+          clearTimeout(responseTimeoutRef.current);
+          responseTimeoutRef.current = null;
+        }
+      }, [])
+    );
+
+    // useRTVIClientEvent(
+    //   RTVIEvent.BotDisconnected,
+    //   useCallback(() => {
+    //     setHasStarted(false);
+    //     setBotStatus("disconnected");
+    //     printHistory(); // Print history when bot disconnects
+    //   }, [printHistory])
+    // );
 
     useRTVIClientEvent(
       RTVIEvent.BotStartedSpeaking,
       useCallback(() => {
-        console.log('[SYSTEM]: Bot started speaking');
+        console.log("[SYSTEM]: Bot started speaking");
         setBotIsTalking(true);
         lastSpeakTimeRef.current = Date.now();
         // Clear any existing timeout when bot starts speaking
@@ -88,50 +152,52 @@ export const Agent: React.FC<{
     useRTVIClientEvent(
       RTVIEvent.BotStoppedSpeaking,
       useCallback(() => {
-        console.log('[SYSTEM]: Bot stopped speaking');
+        console.log("[SYSTEM]: Bot stopped speaking");
         setBotIsTalking(false);
-        
-        // Only set timeout if we haven't already set one
-        if (!responseTimeoutRef.current) {
-          console.log('[SYSTEM]: Setting response timeout...');
-          responseTimeoutRef.current = setTimeout(() => {
-            console.log('[SYSTEM]: Response timeout reached');
-            // Check if enough time has passed since last speak
-            const timeSinceLastSpeak = Date.now() - lastSpeakTimeRef.current;
-            if (timeSinceLastSpeak >= RESPONSE_TIMEOUT && botStatus === "connected") {
-              console.log('[SYSTEM]: No response received within timeout, retrying...');
-              // Trigger the LLM to continue the conversation
+        lastSpeakTimeRef.current = Date.now();
 
-              // IN THEORY, THIS IS WHERE WE WOULD TRIGGER THE AGENT'S LLM
-              // TO GENERATE THE NEXT MESSAGE
+        // Start timeout when bot stops speaking
+        console.log("[SYSTEM]: Bot stopped speaking.");
 
-              // FOR NOW, I HAVE JUST PRINTED OUT THE ACTIONS AVAILABLE BELOW
+        responseTimeoutRef.current = setTimeout(() => {
+          console.log(
+            "[SYSTEM]: Response timeout reached, 2.5 seconds passed. 🕐"
+          );
+          const timeSinceLastSpeak = Date.now() - lastSpeakTimeRef.current;
+          if (
+            timeSinceLastSpeak >= RESPONSE_TIMEOUT &&
+            botStatus === "connected"
+          ) {
+            console.log(
+              "[SYSTEM]: No response received within timeout, continuing demo..."
+            );
 
-              const actions = voiceClient.describeActions();
-              console.log(actions);
-
-              // voiceClient.send({
-              //   type: RTVIEvent.LLMContinue,
-              //   data: { force: true },
-              // });
-            }
-          }, RESPONSE_TIMEOUT);
-        }
+            // LLM helper, append the continuation message
+            const llmHelper = voiceClient.getHelper("llm") as LLMHelper;
+            llmHelper.appendToMessages(
+              {
+                role: "system",
+                content: "Please continue with the product demo.",
+              },
+              true
+            );
+          }
+        }, RESPONSE_TIMEOUT);
       }, [botStatus, voiceClient])
     );
 
     // Cleanup and timeout management
-    useEffect(() => {
-      // Clear timeout when component unmounts or bot disconnects
-      return () => {
-        setHasStarted(false);
-        if (responseTimeoutRef.current) {
-          clearTimeout(responseTimeoutRef.current);
-          responseTimeoutRef.current = undefined;
-        }
-        printHistory(); // Print history on cleanup
-      };
-    }, [printHistory]);
+    // useEffect(() => {
+    //   // Clear timeout when component unmounts or bot disconnects
+    //   return () => {
+    //     setHasStarted(false);
+    //     if (responseTimeoutRef.current) {
+    //       clearTimeout(responseTimeoutRef.current);
+    //       responseTimeoutRef.current = undefined;
+    //     }
+    //     printHistory(); // Print history on cleanup
+    //   };
+    // }, [printHistory]);
 
     // Reset timeout when bot status changes
     useEffect(() => {
