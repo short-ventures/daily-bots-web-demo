@@ -57,7 +57,7 @@ export const LANGUAGES = [
 ];
 
 export const defaultServices = {
-  llm: "together",
+  llm: "openai",
   tts: "cartesia",
   stt: "deepgram",
 };
@@ -132,7 +132,8 @@ export const defaultConfig = [
   {
     service: "llm",
     options: [
-      { name: "model", value: "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo" },
+      // { name: "model", value: "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo" },
+      { name: "model", value: "gpt-4o" },
       {
         name: "initial_messages",
         value: [
@@ -140,14 +141,6 @@ export const defaultConfig = [
             role: "system",
             content: defaultLLMPrompt,
           },
-
-          // {
-          //   // anthropic: user; openai: system
-
-          //   role: "system",
-          //   content:
-          //     "You are a TV weatherman named Wally. Your job is to present the weather to me. You can call the 'get_current_weather' function to get weather information. Start by asking me for my location. Then, use 'get_current_weather' to give me a forecast. Then, answer any questions I have about the weather. Keep your introduction and responses very brief. You don't need to tell me if you're going to call a function; just do it directly. Keep your words to a minimum. When you're delivering the forecast, you can use more words and personality.",
-          // },
         ],
       },
       { name: "run_on_config", value: true },
@@ -155,24 +148,26 @@ export const defaultConfig = [
         name: "tools",
         value: [
           {
-            name: "log_current_screen_number",
-            description: "Log the current screen_number being discussed",
-            parameters: {
-              type: "object",
-              properties: {
-                screen_number: {
-                  type: "number",
-                  description: "The current screen number (1-6).",
+            type: "function",
+            function: {
+              name: "log_current_screen_number",
+              description: "Log the current screen_number being discussed",
+              parameters: {
+                type: "object",
+                properties: {
+                  screen_number: {
+                    type: "number",
+                    description: "The current screen number (1-6).",
+                  },
                 },
+                required: ["screen_number"],
               },
-              required: ["screen_number"],
             },
           },
         ],
       },
     ],
   },
-
   {
     service: "stt",
     options: [
